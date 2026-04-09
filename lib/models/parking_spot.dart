@@ -4,7 +4,7 @@ class ParkingSpot {
   final double latitude;
   final double longitude;
   final String address;
-  final String parkedAt;
+  final DateTime parkedAt;
   final bool isActive;
 
   ParkingSpot({
@@ -24,7 +24,7 @@ class ParkingSpot {
       'latitude': latitude,
       'longitude': longitude,
       'address': address,
-      'parkedAt': parkedAt,
+      'parkedAt': parkedAt.toIso8601String(),
       'isActive': isActive,
     };
   }
@@ -36,7 +36,7 @@ class ParkingSpot {
       latitude: map['latitude'],
       longitude: map['longitude'],
       address: map['address'],
-      parkedAt: map['parkedAt'],
+      parkedAt: DateTime.parse(map['parkedAt']),
       isActive: map['isActive'],
     );
   }

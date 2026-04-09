@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:parker/widgets/parking_card.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
-  void setParking() {
-  }
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  void setParking() {}
 
   @override
   Widget build(BuildContext context) {
@@ -72,33 +78,9 @@ class HomeScreen extends StatelessWidget {
 
             const SizedBox(height: 32),
 
-//temp card, need to add active parking with g maps integrated
-            Card(
-              elevation: 4,
-              child: InkWell(
-                onTap: () {
-                },
-                child: SizedBox(
-                  width: double.infinity,
-                  height: 140,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          'Recent Parking',
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                        const SizedBox(height: 12),
-                        const Text('Google maps here'),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
+            
+           const Text('No parking yet')
+          ,
           ],
         )
 
