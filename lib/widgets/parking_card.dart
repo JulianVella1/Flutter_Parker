@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:parker/models/parking_spot.dart';
 
@@ -11,6 +13,16 @@ class ParkingCard extends StatelessWidget {
   final ParkingSpot spot;
   final VoidCallback onToggleActive;
 
+  String getFormattedDate() {
+    final day = spot.parkedAt.day.toString().padLeft(2, '0');
+    final month = spot.parkedAt.month.toString().padLeft(2, '0');
+    final year = spot.parkedAt.year.toString();
+    final hour = spot.parkedAt.hour.toString().padLeft(2, '0');
+    final minute = spot.parkedAt.minute.toString().padLeft(2, '0');
+
+    return '$day/$month/$year at $hour:$minute';
+  }
+
   @override
   Widget build(BuildContext context) {
     final isActive = spot.isActive;
@@ -18,7 +30,7 @@ class ParkingCard extends StatelessWidget {
     return Card(
       elevation: isActive ? 6 : 2,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         side: BorderSide(
           color: isActive ? Colors.green : Colors.grey.shade300,
           width: isActive ? 2 : 1,
@@ -28,48 +40,49 @@ class ParkingCard extends StatelessWidget {
         padding: const EdgeInsets.all(12),
         child: Row(
           children: [
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                color: Colors.grey.shade300,
-              ),
-              child: const Icon(Icons.image),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: spot.imagePath.isNotEmpty
+                  ? Image.file(
+                      File(spot.imagePath),
+                      width: 90,
+                      height: 90,
+                      fit: BoxFit.cover,
+                    )
+                  : Container(
+                      width: 90,
+                      height: 90,
+                      color: Colors.grey.shade300,
+                      child: const Icon(Icons.local_parking, size: 36),
+                    ),
             ),
-
             const SizedBox(width: 12),
-
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
                     spot.address,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-
                   const SizedBox(height: 6),
-
                   Text(
                     '${spot.latitude.toStringAsFixed(4)}, ${spot.longitude.toStringAsFixed(4)}',
                     style: const TextStyle(fontSize: 12),
                   ),
-
                   const SizedBox(height: 6),
-
                   Text(
-                    spot.parkedAt.toString(),
+                    getFormattedDate(),
                     style: const TextStyle(fontSize: 12),
                   ),
-
                   const SizedBox(height: 8),
-
                   Text(
-                    isActive ? 'ACTIVE' : 'COMPLETED',
+                    isActive ? 'ACTIVE' : 'ENDED',
                     style: TextStyle(
                       color: isActive ? Colors.green : Colors.grey,
                       fontWeight: FontWeight.bold,

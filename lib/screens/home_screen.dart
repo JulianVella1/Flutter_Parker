@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:parker/data/parking_data.dart';
+import 'package:parker/models/parking_spot.dart';
 import 'package:parker/widgets/parking_card.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -6,11 +8,78 @@ class HomeScreen extends StatefulWidget {
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
-
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  void setParking() {}
+  List<ParkingSpot> parkingSpots = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    loadParkingSpots();
+  }
+
+  Future<void> loadParkingSpots() async {
+    final loadedSpots = await ParkingStorage.loadParkingSpots();
+
+    setState(() {
+      parkingSpots = loadedSpots;
+      isLoading = false;
+    });
+  }
+
+  Future<void> saveParkingSpots() async {
+    await ParkingStorage.saveParkingSpots(parkingSpots);
+  }
+
+  ParkingSpot? get latestSpot {
+    if (parkingSpots.isEmpty) {
+      return null;
+    }
+
+    return parkingSpots.first;
+  }
+
+  Future<void> setParking() async {
+    final newSpot = ParkingSpot(
+      id: DateTime.now().toString(),
+      imagePath: '',
+      latitude: 0,
+      longitude: 0,
+      address: 'Parking spot',
+      parkedAt: DateTime.now(),
+      isActive: true,
+    );
+
+    setState(() {
+      parkingSpots.insert(0, newSpot);
+    });
+
+    await saveParkingSpots();
+  }
+
+  Future<void> endParking() async {
+    if (latestSpot == null) {
+      return;
+    }
+
+    final updatedSpot = ParkingSpot(
+      id: latestSpot!.id,
+      imagePath: latestSpot!.imagePath,
+      latitude: latestSpot!.latitude,
+      longitude: latestSpot!.longitude,
+      address: latestSpot!.address,
+      parkedAt: latestSpot!.parkedAt,
+      isActive: false,
+    );
+
+    setState(() {
+      parkingSpots[0] = updatedSpot;
+    });
+
+    await saveParkingSpots();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,8 +92,6 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           children: [
             const SizedBox(height: 24),
-
-            // Big button (higher now)
             GestureDetector(
               onTap: setParking,
               child: Container(
@@ -33,10 +100,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(28),
                   gradient: LinearGradient(
-                    colors: [
-                      colorScheme.primary,
-                      colorScheme.primaryContainer,
-                    ],
+                    colors: [colorScheme.primary, colorScheme.primaryContainer],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
@@ -65,7 +129,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       padding: const EdgeInsets.only(bottom: 20),
                       child: Text(
                         'Set Parking!',
-                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        style: Theme.of(context).textTheme.headlineSmall
+                            ?.copyWith(
                               color: colorScheme.onPrimary,
                               fontWeight: FontWeight.bold,
                             ),
@@ -75,15 +140,15 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
-
             const SizedBox(height: 32),
-
-            
-           const Text('No parking yet')
-          ,
+            if (isLoading)
+              const CircularProgressIndicator()
+            else if (latestSpot == null)
+              const Text('No parking yet')
+            else
+              ParkingCard(spot: latestSpot!, onToggleActive: endParking),
           ],
-        )
-
+        ),
       ),
     );
   }
