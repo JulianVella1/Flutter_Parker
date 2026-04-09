@@ -65,14 +65,12 @@ class ParkingCard extends StatelessWidget {
                     spot.address,
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontSize: 16,
+                      fontSize: 15,
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    '${spot.latitude.toStringAsFixed(4)}, ${spot.longitude.toStringAsFixed(4)}',
+                    '${spot.latitude.toStringAsFixed(5)}, ${spot.longitude.toStringAsFixed(5)}',
                     style: const TextStyle(fontSize: 12),
                   ),
                   const SizedBox(height: 6),

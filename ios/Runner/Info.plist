@@ -45,5 +45,12 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+
+	<key>NSCameraUsageDescription</key>
+	<string>To take a photo of the parked car</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>To access photos for parking purposes</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>To save your location when parked</string>
 </dict>
 </plist>

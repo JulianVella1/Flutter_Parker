@@ -1,7 +1,12 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:parker/data/parking_data.dart';
 import 'package:parker/models/parking_spot.dart';
 import 'package:parker/widgets/parking_card.dart';
+import 'package:path_provider/path_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -41,22 +46,87 @@ class _HomeScreenState extends State<HomeScreen> {
     return parkingSpots.first;
   }
 
-  Future<void> setParking() async {
-    final newSpot = ParkingSpot(
-      id: DateTime.now().toString(),
-      imagePath: '',
-      latitude: 0,
-      longitude: 0,
-      address: 'Parking spot',
-      parkedAt: DateTime.now(),
-      isActive: true,
+  Future<Position> getCurrentLocation() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      throw Exception('Location services are disabled.');
+    }
+
+    permission = await Geolocator.checkPermission();
+
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+
+      if (permission == LocationPermission.denied) {
+        throw Exception('Location permission denied.');
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      throw Exception('Location permission permanently denied.');
+    }
+
+    return await Geolocator.getCurrentPosition();
+  }
+
+  Future<String> takePhotoAndSave() async {
+    final imagePicker = ImagePicker();
+
+    final XFile? pickedImage = await imagePicker.pickImage(
+      source: ImageSource.camera,
+      imageQuality: 85,
     );
 
-    setState(() {
-      parkingSpots.insert(0, newSpot);
-    });
+    if (pickedImage == null) {
+      throw Exception('No image was taken.');
+    }
 
-    await saveParkingSpots();
+    final appDir = await getApplicationDocumentsDirectory();
+    final fileName = DateTime.now().millisecondsSinceEpoch.toString();
+    final savedImage = await File(
+      pickedImage.path,
+    ).copy('${appDir.path}/$fileName.jpg');
+
+    return savedImage.path;
+  }
+
+  Future<void> setParking() async {
+    try {
+      final imagePath = await takePhotoAndSave();
+      final position = await getCurrentLocation();
+
+      final newSpot = ParkingSpot(
+        id: DateTime.now().toIso8601String(),
+        imagePath: imagePath,
+        latitude: position.latitude,
+        longitude: position.longitude,
+        address:
+            'Lat: ${position.latitude.toStringAsFixed(5)}, Lng: ${position.longitude.toStringAsFixed(5)}',
+        parkedAt: DateTime.now(),
+        isActive: true,
+      );
+
+      setState(() {
+        parkingSpots.insert(0, newSpot);
+      });
+
+      await saveParkingSpots();
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Parking saved successfully')),
+      );
+    } catch (error) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.toString())));
+    }
   }
 
   Future<void> endParking() async {
