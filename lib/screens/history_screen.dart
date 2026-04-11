@@ -3,11 +3,20 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:parker/models/parking_spot.dart';
 import 'package:parker/screens/parking_details_screen.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class HistoryScreen extends StatelessWidget {
   const HistoryScreen({super.key, required this.parkingSpots});
 
   final List<ParkingSpot> parkingSpots;
+
+  Future<void> openInGoogleMaps(double lat, double lng) async {
+    final Uri url = Uri.parse(
+      'https://www.google.com/maps/search/?api=1&query=$lat,$lng',
+    );
+
+    await launchUrl(url, mode: LaunchMode.externalApplication);
+  }
 
   String formatDate(DateTime dateTime) {
     final day = dateTime.day.toString().padLeft(2, '0');
@@ -22,105 +31,90 @@ class HistoryScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Parking History')),
+      appBar: AppBar(
+        title: const Text('Parking History'),
+      ),
       body: parkingSpots.isEmpty
           ? const Center(
-              child: Text(
-                'No parking history yet.',
-                style: TextStyle(fontSize: 18),
-              ),
+              child: Text('No parking history yet'),
             )
           : ListView.builder(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(12),
               itemCount: parkingSpots.length,
               itemBuilder: (context, index) {
                 final parking = parkingSpots[index];
 
-                return InkWell(
-                  borderRadius: BorderRadius.circular(16),
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            ParkingDetailsScreen(spot: parking),
-                      ),
-                    );
-                  },
-                  child: Card(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                return Card(
+                  margin: const EdgeInsets.symmetric(vertical: 8),
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.all(10),
+                    leading: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: parking.imagePath.isNotEmpty
+                          ? Image.file(
+                              File(parking.imagePath),
+                              width: 60,
+                              height: 60,
+                              fit: BoxFit.cover,
+                            )
+                          : Container(
+                              width: 60,
+                              height: 60,
+                              color: Colors.grey.shade300,
+                              child: const Icon(Icons.local_parking),
+                            ),
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: parking.imagePath.isNotEmpty
-                                ? Image.file(
-                                    File(parking.imagePath),
-                                    width: 90,
-                                    height: 90,
-                                    fit: BoxFit.cover,
-                                  )
-                                : Container(
-                                    width: 90,
-                                    height: 90,
-                                    color: Colors.grey.shade300,
-                                    child: const Icon(
-                                      Icons.image_not_supported,
-                                    ),
-                                  ),
+                    title: Text(
+                      parking.address,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 6),
+                        Text(formatDate(parking.parkedAt)),
+                        const SizedBox(height: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  parking.address,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                                const SizedBox(height: 6),
-                                Text(
-                                  '${parking.latitude.toStringAsFixed(5)}, '
-                                  '${parking.longitude.toStringAsFixed(5)}',
-                                ),
-                                const SizedBox(height: 6),
-                                Text('Time: ${formatDate(parking.parkedAt)}'),
-                                const SizedBox(height: 8),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: parking.isActive
-                                        ? Colors.green
-                                        : Colors.grey,
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: Text(
-                                    parking.isActive ? 'Active' : 'Ended',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ),
-                              ],
+                          decoration: BoxDecoration(
+                            color: parking.isActive
+                                ? Colors.green.shade100
+                                : Colors.grey.shade300,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            parking.isActive ? 'Active' : 'Ended',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: parking.isActive
+                                  ? Colors.green.shade800
+                                  : Colors.black54,
                             ),
                           ),
-                          const SizedBox(width: 8),
-                          const Icon(Icons.chevron_right),
-                        ],
+                        ),
+                      ],
+                    ),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.map),
+                      onPressed: () => openInGoogleMaps(
+                        parking.latitude,
+                        parking.longitude,
                       ),
                     ),
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (ctx) =>
+                              ParkingDetailsScreen(spot: parking),
+                        ),
+                      );
+                    },
                   ),
                 );
               },

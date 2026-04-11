@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:parker/data/parking_data.dart';
@@ -8,6 +9,7 @@ import 'package:parker/models/parking_spot.dart';
 import 'package:parker/screens/history_screen.dart';
 import 'package:parker/widgets/parking_card.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -73,6 +75,33 @@ class _HomeScreenState extends State<HomeScreen> {
     return await Geolocator.getCurrentPosition();
   }
 
+  Future<String> getReadableAddress(double latitude, double longitude) async {
+    try {
+      final placemarks = await placemarkFromCoordinates(latitude, longitude);
+
+      if (placemarks.isEmpty) {
+        return 'Unknown road';
+      }
+
+      final place = placemarks.first;
+
+      final parts = [place.street, place.subLocality, place.locality];
+
+      final cleanedParts = parts
+          .where((part) => part != null && part.trim().isNotEmpty)
+          .cast<String>()
+          .toList();
+
+      if (cleanedParts.isEmpty) {
+        return 'Unknown road';
+      }
+
+      return cleanedParts.join(', ');
+    } catch (_) {
+      return 'Unknown road';
+    }
+  }
+
   Future<String> takePhotoAndSave() async {
     final imagePicker = ImagePicker();
 
@@ -94,18 +123,38 @@ class _HomeScreenState extends State<HomeScreen> {
     return savedImage.path;
   }
 
+  Future<void> openInGoogleMaps(ParkingSpot spot) async {
+    final Uri googleMapsUri = Uri.parse(
+      'https://www.google.com/maps/search/?api=1&query=${spot.latitude},${spot.longitude}',
+    );
+
+    final launched = await launchUrl(
+      googleMapsUri,
+      mode: LaunchMode.externalApplication,
+    );
+
+    if (!launched && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not open Google Maps')),
+      );
+    }
+  }
+
   Future<void> setParking() async {
     try {
       final imagePath = await takePhotoAndSave();
       final position = await getCurrentLocation();
+      final address = await getReadableAddress(
+        position.latitude,
+        position.longitude,
+      );
 
       final newSpot = ParkingSpot(
         id: DateTime.now().toIso8601String(),
         imagePath: imagePath,
         latitude: position.latitude,
         longitude: position.longitude,
-        address:
-            'Lat: ${position.latitude.toStringAsFixed(5)}, Lng: ${position.longitude.toStringAsFixed(5)}',
+        address: address,
         parkedAt: DateTime.now(),
         isActive: true,
       );
@@ -174,7 +223,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -234,7 +282,11 @@ class _HomeScreenState extends State<HomeScreen> {
             else if (latestSpot == null)
               const Text('No parking yet')
             else
-              ParkingCard(spot: latestSpot!, onToggleActive: endParking),
+              ParkingCard(
+                spot: latestSpot!,
+                onToggleActive: endParking,
+                onOpenMaps: () => openInGoogleMaps(latestSpot!),
+              ),
           ],
         ),
       ),

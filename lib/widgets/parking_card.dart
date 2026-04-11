@@ -8,10 +8,12 @@ class ParkingCard extends StatelessWidget {
     super.key,
     required this.spot,
     required this.onToggleActive,
+    required this.onOpenMaps,
   });
 
   final ParkingSpot spot;
   final VoidCallback onToggleActive;
+  final VoidCallback onOpenMaps;
 
   String getFormattedDate() {
     final day = spot.parkedAt.day.toString().padLeft(2, '0');
@@ -38,62 +40,77 @@ class ParkingCard extends StatelessWidget {
       ),
       child: Padding(
         padding: const EdgeInsets.all(12),
-        child: Row(
+        child: Column(
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: spot.imagePath.isNotEmpty
-                  ? Image.file(
-                      File(spot.imagePath),
-                      width: 90,
-                      height: 90,
-                      fit: BoxFit.cover,
-                    )
-                  : Container(
-                      width: 90,
-                      height: 90,
-                      color: Colors.grey.shade300,
-                      child: const Icon(Icons.local_parking, size: 36),
-                    ),
+            Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: spot.imagePath.isNotEmpty
+                      ? Image.file(
+                          File(spot.imagePath),
+                          width: 90,
+                          height: 90,
+                          fit: BoxFit.cover,
+                        )
+                      : Container(
+                          width: 90,
+                          height: 90,
+                          color: Colors.grey.shade300,
+                          child: const Icon(Icons.local_parking, size: 36),
+                        ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        spot.address,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        getFormattedDate(),
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        isActive ? 'ACTIVE' : 'ENDED',
+                        style: TextStyle(
+                          color: isActive ? Colors.green : Colors.grey,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    spot.address,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15,
-                    ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: onOpenMaps,
+                    icon: const Icon(Icons.map),
+                    label: const Text('Open Maps'),
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    '${spot.latitude.toStringAsFixed(5)}, ${spot.longitude.toStringAsFixed(5)}',
-                    style: const TextStyle(fontSize: 12),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    getFormattedDate(),
-                    style: const TextStyle(fontSize: 12),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    isActive ? 'ACTIVE' : 'ENDED',
-                    style: TextStyle(
-                      color: isActive ? Colors.green : Colors.grey,
-                      fontWeight: FontWeight.bold,
+                ),
+                if (isActive) ...[
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: onToggleActive,
+                      child: const Text('End'),
                     ),
                   ),
                 ],
-              ),
+              ],
             ),
-            if (isActive)
-              ElevatedButton(
-                onPressed: onToggleActive,
-                child: const Text('End'),
-              ),
           ],
         ),
       ),

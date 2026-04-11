@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:parker/models/parking_spot.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ParkingDetailsScreen extends StatelessWidget {
   const ParkingDetailsScreen({super.key, required this.spot});
@@ -16,6 +17,23 @@ class ParkingDetailsScreen extends StatelessWidget {
     final minute = dateTime.minute.toString().padLeft(2, '0');
 
     return '$day/$month/$year at $hour:$minute';
+  }
+
+  Future<void> openInGoogleMaps(BuildContext context) async {
+    final Uri googleMapsUri = Uri.parse(
+      'https://www.google.com/maps/search/?api=1&query=${spot.latitude},${spot.longitude}',
+    );
+
+    final launched = await launchUrl(
+      googleMapsUri,
+      mode: LaunchMode.externalApplication,
+    );
+
+    if (!launched && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not open Google Maps')),
+      );
+    }
   }
 
   @override
@@ -71,6 +89,15 @@ class ParkingDetailsScreen extends StatelessWidget {
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
                 color: spot.isActive ? Colors.green : Colors.grey,
+              ),
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () => openInGoogleMaps(context),
+                icon: const Icon(Icons.map),
+                label: const Text('Open in Google Maps'),
               ),
             ),
           ],
