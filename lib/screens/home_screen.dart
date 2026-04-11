@@ -5,6 +5,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:parker/data/parking_data.dart';
 import 'package:parker/models/parking_spot.dart';
+import 'package:parker/screens/history_screen.dart';
 import 'package:parker/widgets/parking_card.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -156,7 +157,24 @@ class _HomeScreenState extends State<HomeScreen> {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Parker'), centerTitle: true),
+      appBar: AppBar(
+        title: const Text('Parker'),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) =>
+                      HistoryScreen(parkingSpots: parkingSpots),
+                ),
+              );
+            },
+            icon: const Icon(Icons.history),
+          ),
+        ],
+      ),
+      
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
