@@ -31,6 +31,10 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> loadParkingSpots() async {
     final loadedSpots = await ParkingStorage.loadParkingSpots();
 
+    if (!mounted) {
+      return;
+    }
+
     setState(() {
       parkingSpots = loadedSpots;
       isLoading = false;
@@ -49,16 +53,20 @@ class _HomeScreenState extends State<HomeScreen> {
     return parkingSpots.first;
   }
 
-  Future<Position> getCurrentLocation() async {
-    bool serviceEnabled;
-    LocationPermission permission;
+  void showInfoMessage(String message) {
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
 
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+  Future<Position> getCurrentLocation() async {
+    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       throw Exception('Location services are disabled.');
     }
 
-    permission = await Geolocator.checkPermission();
+    var permission = await Geolocator.checkPermission();
 
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
@@ -72,7 +80,7 @@ class _HomeScreenState extends State<HomeScreen> {
       throw Exception('Location permission permanently denied.');
     }
 
-    return await Geolocator.getCurrentPosition();
+    return Geolocator.getCurrentPosition();
   }
 
   Future<String> getReadableAddress(double latitude, double longitude) async {
@@ -84,7 +92,6 @@ class _HomeScreenState extends State<HomeScreen> {
       }
 
       final place = placemarks.first;
-
       final parts = [place.street, place.subLocality, place.locality];
 
       final cleanedParts = parts
@@ -104,8 +111,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<String> takePhotoAndSave() async {
     final imagePicker = ImagePicker();
-
-    final XFile? pickedImage = await imagePicker.pickImage(
+    final pickedImage = await imagePicker.pickImage(
       source: ImageSource.camera,
       imageQuality: 85,
     );
@@ -124,7 +130,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> openInGoogleMaps(ParkingSpot spot) async {
-    final Uri googleMapsUri = Uri.parse(
+    final googleMapsUri = Uri.parse(
       'https://www.google.com/maps/search/?api=1&query=${spot.latitude},${spot.longitude}',
     );
 
@@ -134,9 +140,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
 
     if (!launched && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not open Google Maps')),
-      );
+      showInfoMessage('Could not open Google Maps.');
     }
   }
 
@@ -164,18 +168,13 @@ class _HomeScreenState extends State<HomeScreen> {
       });
 
       await saveParkingSpots();
-
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Parking saved successfully')),
-      );
+      showInfoMessage('Parking saved successfully.');
     } catch (error) {
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(error.toString())));
+      showInfoMessage(error.toString());
     }
   }
 
@@ -184,21 +183,12 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
-    final updatedSpot = ParkingSpot(
-      id: latestSpot!.id,
-      imagePath: latestSpot!.imagePath,
-      latitude: latestSpot!.latitude,
-      longitude: latestSpot!.longitude,
-      address: latestSpot!.address,
-      parkedAt: latestSpot!.parkedAt,
-      isActive: false,
-    );
-
     setState(() {
-      parkingSpots[0] = updatedSpot;
+      parkingSpots[0] = parkingSpots[0].copyWith(isActive: false);
     });
 
     await saveParkingSpots();
+    showInfoMessage('Parking ended.');
   }
 
   @override
@@ -260,13 +250,11 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 8),
                     Padding(
-                      padding: const EdgeInsets.only(bottom: 20),
+                      padding: const EdgeInsets.only(bottom: 26),
                       child: Text(
-                        'Set Parking!',
-                        style: Theme.of(context).textTheme.headlineSmall
-                            ?.copyWith(
+                        'Set Parking',
+                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                               color: colorScheme.onPrimary,
                               fontWeight: FontWeight.bold,
                             ),
@@ -276,11 +264,30 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 24),
             if (isLoading)
               const CircularProgressIndicator()
             else if (latestSpot == null)
-              const Text('No parking yet')
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.local_parking_outlined,
+                        size: 42,
+                        color: colorScheme.primary,
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'No parking saved yet.',
+                        style: Theme.of(context).textTheme.titleMedium,
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              )
             else
               ParkingCard(
                 spot: latestSpot!,

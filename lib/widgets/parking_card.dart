@@ -35,7 +35,7 @@ class ParkingCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         side: BorderSide(
           color: isActive ? Colors.green : Colors.grey.shade300,
-          width: isActive ? 2 : 1,
+          width: isActive ? 2.5 : 1,
         ),
       ),
       child: Padding(

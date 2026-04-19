@@ -1,6 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:parker/screens/splash_screen.dart';
 
+final theme = ThemeData(
+  useMaterial3: true,
+  colorScheme: ColorScheme.fromSeed(
+    seedColor: const Color.fromARGB(255, 21, 175, 247),
+  ),
+);
+
 void main() {
   runApp(const ParkerApp());
 }
@@ -13,12 +20,8 @@ class ParkerApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Parker',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-        useMaterial3: true,
-      ),
+      theme: theme,
       home: const SplashScreen(),
     );
   }
 }
-
