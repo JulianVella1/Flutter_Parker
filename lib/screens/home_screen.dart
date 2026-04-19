@@ -164,7 +164,7 @@ class _HomeScreenState extends State<HomeScreen> {
       );
 
       setState(() {
-        parkingSpots.insert(0, newSpot);
+        parkingSpots = [newSpot, ...parkingSpots];
       });
 
       await saveParkingSpots();
@@ -178,13 +178,17 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> endParking() async {
-    if (latestSpot == null) {
+  Future<void> endParking(ParkingSpot spot) async {
+    final spotIndex = parkingSpots.indexWhere((item) => item.id == spot.id);
+
+    if (spotIndex == -1) {
       return;
     }
 
     setState(() {
-      parkingSpots[0] = parkingSpots[0].copyWith(isActive: false);
+      parkingSpots[spotIndex] = parkingSpots[spotIndex].copyWith(
+        isActive: false,
+      );
     });
 
     await saveParkingSpots();
@@ -204,8 +208,11 @@ class _HomeScreenState extends State<HomeScreen> {
             onPressed: () {
               Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (context) =>
-                      HistoryScreen(parkingSpots: parkingSpots),
+                  builder: (context) => HistoryScreen(
+                    parkingSpots: parkingSpots,
+                    onEndParking: endParking,
+                    onOpenMaps: openInGoogleMaps,
+                  ),
                 ),
               );
             },
@@ -291,7 +298,7 @@ class _HomeScreenState extends State<HomeScreen> {
             else
               ParkingCard(
                 spot: latestSpot!,
-                onToggleActive: endParking,
+                onToggleActive: () => endParking(latestSpot!),
                 onOpenMaps: () => openInGoogleMaps(latestSpot!),
               ),
           ],

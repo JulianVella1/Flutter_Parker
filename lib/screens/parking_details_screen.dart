@@ -2,38 +2,25 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:parker/models/parking_spot.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class ParkingDetailsScreen extends StatelessWidget {
-  const ParkingDetailsScreen({super.key, required this.spot});
+  const ParkingDetailsScreen({
+    super.key,
+    required this.spot,
+    required this.onOpenMaps,
+  });
 
   final ParkingSpot spot;
+  final VoidCallback onOpenMaps;
 
-  String formatDate(DateTime dateTime) {
-    final day = dateTime.day.toString().padLeft(2, '0');
-    final month = dateTime.month.toString().padLeft(2, '0');
-    final year = dateTime.year.toString();
-    final hour = dateTime.hour.toString().padLeft(2, '0');
-    final minute = dateTime.minute.toString().padLeft(2, '0');
+  String get formattedDate {
+    final day = spot.parkedAt.day.toString().padLeft(2, '0');
+    final month = spot.parkedAt.month.toString().padLeft(2, '0');
+    final year = spot.parkedAt.year.toString();
+    final hour = spot.parkedAt.hour.toString().padLeft(2, '0');
+    final minute = spot.parkedAt.minute.toString().padLeft(2, '0');
 
     return '$day/$month/$year at $hour:$minute';
-  }
-
-  Future<void> openInGoogleMaps(BuildContext context) async {
-    final Uri googleMapsUri = Uri.parse(
-      'https://www.google.com/maps/search/?api=1&query=${spot.latitude},${spot.longitude}',
-    );
-
-    final launched = await launchUrl(
-      googleMapsUri,
-      mode: LaunchMode.externalApplication,
-    );
-
-    if (!launched && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not open Google Maps')),
-      );
-    }
   }
 
   @override
@@ -79,7 +66,7 @@ class ParkingDetailsScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Parked at: ${formatDate(spot.parkedAt)}',
+              'Parked at: $formattedDate',
               style: const TextStyle(fontSize: 16),
             ),
             const SizedBox(height: 8),
@@ -95,7 +82,7 @@ class ParkingDetailsScreen extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: () => openInGoogleMaps(context),
+                onPressed: onOpenMaps,
                 icon: const Icon(Icons.map),
                 label: const Text('Open in Google Maps'),
               ),
