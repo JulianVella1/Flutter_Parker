@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "352449067824",
+    "project_id": "flutter-parker-app",
+    "storage_bucket": "flutter-parker-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:352449067824:android:c140df63d53de7397d26f5",
+        "android_client_info": {
+          "package_name": "com.example.parker"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCBTBJsdWiXp_mj0D7hIdZqWqxAbYSC99o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

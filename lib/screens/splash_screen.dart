@@ -18,10 +18,12 @@ class _SplashScreenState extends State<SplashScreen> {
     super.initState();
 
     Timer(const Duration(seconds: 3), () {
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
 
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const HomeScreen()),
+        MaterialPageRoute(builder: (ctx) => const HomeScreen()),
       );
     });
   }
@@ -33,14 +35,12 @@ class _SplashScreenState extends State<SplashScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          // Background image
           SizedBox.expand(
             child: Image.asset(
               'assets/splashscreen/splash_screen_main.png',
               fit: BoxFit.cover,
             ),
           ),
-
           Align(
             alignment: Alignment.bottomCenter,
             child: ClipRect(
@@ -49,25 +49,20 @@ class _SplashScreenState extends State<SplashScreen> {
                 width: double.infinity,
                 child: BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                  child: Container(color: Colors.black.withValues(alpha: 0.15)),
+                  child: Container(
+                    color: Colors.black.withValues(alpha: 0.15),
+                  ),
                 ),
               ),
             ),
           ),
-          //https://pub.dev/packages/loading_animation_widget
           Align(
             alignment: Alignment.bottomCenter,
             child: Padding(
               padding: const EdgeInsets.only(bottom: 50),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const SizedBox(height: 20),
-                  LoadingAnimationWidget.inkDrop(
-                    color: colorScheme.primary,
-                    size: 70,
-                  ),
-                ],
+              child: LoadingAnimationWidget.inkDrop(
+                color: colorScheme.primary,
+                size: 70,
               ),
             ),
           ),

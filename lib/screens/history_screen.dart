@@ -30,35 +30,46 @@ class HistoryScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    Widget content = ListView.builder(
+      padding: const EdgeInsets.all(8),
+      itemCount: parkingSpots.length,
+      itemBuilder: (ctx, index) {
+        final spot = parkingSpots[index];
+
+        return ParkingCard(
+          spot: spot,
+          onToggleActive: () {
+            onEndParking(spot);
+          },
+          onOpenMaps: () {
+            onOpenMaps(spot);
+          },
+          onSelectSpot: () {
+            _selectParking(context, spot);
+          },
+        );
+      },
+    );
+
     if (parkingSpots.isEmpty) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Parking History')),
-        body: const Center(child: Text('No parking history yet')),
+      content = Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              'Uh oh... nothing here!',
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Start by saving your first parking spot.',
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
+          ],
+        ),
       );
     }
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Parking History')),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(8),
-        itemCount: parkingSpots.length,
-        itemBuilder: (ctx, index) {
-          final spot = parkingSpots[index];
-
-          return ParkingCard(
-            spot: spot,
-            onToggleActive: () {
-              onEndParking(spot);
-            },
-            onOpenMaps: () {
-              onOpenMaps(spot);
-            },
-            onSelectSpot: () {
-              _selectParking(context, spot);
-            },
-          );
-        },
-      ),
-    );
+    return content;
   }
 }

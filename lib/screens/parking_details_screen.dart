@@ -28,63 +28,59 @@ class ParkingDetailsScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Parking Details')),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (spot.imagePath.isNotEmpty)
-              ClipRRect(
-                borderRadius: BorderRadius.circular(20),
-                child: Image.file(
-                  File(spot.imagePath),
-                  width: double.infinity,
-                  height: 250,
-                  fit: BoxFit.cover,
-                ),
+              Image.file(
+                File(spot.imagePath),
+                width: double.infinity,
+                height: 280,
+                fit: BoxFit.cover,
               )
             else
               Container(
                 width: double.infinity,
-                height: 250,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Icon(Icons.local_parking, size: 80),
+                height: 280,
+                color: Colors.grey.shade300,
+                child: const Icon(Icons.local_parking, size: 100),
               ),
-            const SizedBox(height: 20),
-            Text(spot.address, style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 12),
-            Text(
-              'Latitude: ${spot.latitude.toStringAsFixed(5)}',
-              style: const TextStyle(fontSize: 16),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Longitude: ${spot.longitude.toStringAsFixed(5)}',
-              style: const TextStyle(fontSize: 16),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Parked at: $formattedDate',
-              style: const TextStyle(fontSize: 16),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Status: ${spot.isActive ? 'Active' : 'Ended'}',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: spot.isActive ? Colors.green : Colors.grey,
-              ),
-            ),
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: onOpenMaps,
-                icon: const Icon(Icons.map),
-                label: const Text('Open in Google Maps'),
+            const SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                children: [
+                  Text(
+                    spot.address,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text('Parked at: $formattedDate'),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Coordinates: ${spot.latitude.toStringAsFixed(5)}, ${spot.longitude.toStringAsFixed(5)}',
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    spot.isActive ? 'Status: Active' : 'Status: Ended',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: spot.isActive ? Colors.green : Colors.grey,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: onOpenMaps,
+                      icon: const Icon(Icons.map),
+                      label: const Text('Open in Google Maps'),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],

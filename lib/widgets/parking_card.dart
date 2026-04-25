@@ -32,68 +32,79 @@ class ParkingCard extends StatelessWidget {
     return InkWell(
       onTap: onSelectSpot,
       child: Card(
-        elevation: spot.isActive ? 6 : 2,
+        margin: const EdgeInsets.all(8),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
           side: BorderSide(
-            color: spot.isActive ? Colors.green : Colors.grey.shade300,
-            width: spot.isActive ? 2.5 : 1,
+            color: spot.isActive ? Colors.green : Colors.transparent,
+            width: spot.isActive ? 2.5 : 0,
           ),
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            children: [
-              Row(
+        elevation: spot.isActive ? 5 : 2,
+        clipBehavior: Clip.hardEdge,
+        child: Column(
+          children: [
+            if (spot.imagePath.isNotEmpty)
+              Image.file(
+                File(spot.imagePath),
+                width: double.infinity,
+                height: 190,
+                fit: BoxFit.cover,
+              )
+            else
+              Container(
+                width: double.infinity,
+                height: 190,
+                color: Colors.grey.shade300,
+                child: const Icon(Icons.local_parking, size: 64),
+              ),
+            Container(
+              width: double.infinity,
+              color: Colors.black54,
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+              child: Column(
                 children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: spot.imagePath.isNotEmpty
-                        ? Image.file(
-                            File(spot.imagePath),
-                            width: 90,
-                            height: 90,
-                            fit: BoxFit.cover,
-                          )
-                        : Container(
-                            width: 90,
-                            height: 90,
-                            color: Colors.grey.shade300,
-                            child: const Icon(Icons.local_parking, size: 36),
-                          ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          spot.address,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          formattedDate,
-                          style: const TextStyle(fontSize: 12),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          spot.isActive ? 'ACTIVE' : 'ENDED',
-                          style: TextStyle(
-                            color: spot.isActive ? Colors.green : Colors.grey,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
+                  Text(
+                    spot.address,
+                    textAlign: TextAlign.center,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
                     ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.schedule, color: Colors.white),
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          formattedDate,
+                          style: const TextStyle(color: Colors.white),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Icon(
+                        spot.isActive ? Icons.check_circle : Icons.cancel,
+                        color: Colors.white,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        spot.isActive ? 'Active' : 'Ended',
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                    ],
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
-              Row(
+            ),
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
                 children: [
                   Expanded(
                     child: OutlinedButton.icon(
@@ -113,8 +124,8 @@ class ParkingCard extends StatelessWidget {
                   ],
                 ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

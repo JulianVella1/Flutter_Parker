@@ -4,31 +4,36 @@ import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:parker/data/parking_data.dart';
 import 'package:parker/models/parking_spot.dart';
 import 'package:parker/screens/history_screen.dart';
-import 'package:parker/widgets/parking_card.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:parker/screens/parkings_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:parker/services/analytics_service.dart';
+import 'package:parker/services/notification_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  State<HomeScreen> createState() {
+    return _HomeScreenState();
+  }
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  List<ParkingSpot> parkingSpots = [];
-  bool isLoading = true;
+  int _selectedTab = 0;
+  List<ParkingSpot> _parkingSpots = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    loadParkingSpots();
+    _loadParkingSpots();
   }
 
-  Future<void> loadParkingSpots() async {
+  Future<void> _loadParkingSpots() async {
     final loadedSpots = await ParkingStorage.loadParkingSpots();
 
     if (!mounted) {
@@ -36,31 +41,37 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     setState(() {
-      parkingSpots = loadedSpots;
-      isLoading = false;
+      _parkingSpots = loadedSpots;
+      _isLoading = false;
     });
   }
 
-  Future<void> saveParkingSpots() async {
-    await ParkingStorage.saveParkingSpots(parkingSpots);
+  Future<void> _saveParkingSpots() async {
+    await ParkingStorage.saveParkingSpots(_parkingSpots);
   }
 
-  ParkingSpot? get latestSpot {
-    if (parkingSpots.isEmpty) {
+  ParkingSpot? get _latestSpot {
+    if (_parkingSpots.isEmpty) {
       return null;
     }
 
-    return parkingSpots.first;
+    return _parkingSpots.first;
   }
 
-  void showInfoMessage(String message) {
+  void _selectTab(int index) {
+    setState(() {
+      _selectedTab = index;
+    });
+  }
+
+  void _showInfoMessage(String message) {
     ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
     );
   }
 
-  Future<Position> getCurrentLocation() async {
+  Future<Position> _getCurrentLocation() async {
     final serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       throw Exception('Location services are disabled.');
@@ -83,7 +94,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Geolocator.getCurrentPosition();
   }
 
-  Future<String> getReadableAddress(double latitude, double longitude) async {
+  Future<String> _getReadableAddress(double latitude, double longitude) async {
     try {
       final placemarks = await placemarkFromCoordinates(latitude, longitude);
 
@@ -109,7 +120,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<String> takePhotoAndSave() async {
+  Future<String> _takePhotoAndSave() async {
     final imagePicker = ImagePicker();
     final pickedImage = await imagePicker.pickImage(
       source: ImageSource.camera,
@@ -129,26 +140,11 @@ class _HomeScreenState extends State<HomeScreen> {
     return savedImage.path;
   }
 
-  Future<void> openInGoogleMaps(ParkingSpot spot) async {
-    final googleMapsUri = Uri.parse(
-      'https://www.google.com/maps/search/?api=1&query=${spot.latitude},${spot.longitude}',
-    );
-
-    final launched = await launchUrl(
-      googleMapsUri,
-      mode: LaunchMode.externalApplication,
-    );
-
-    if (!launched && mounted) {
-      showInfoMessage('Could not open Google Maps.');
-    }
-  }
-
-  Future<void> setParking() async {
+  Future<void> _setParking() async {
     try {
-      final imagePath = await takePhotoAndSave();
-      final position = await getCurrentLocation();
-      final address = await getReadableAddress(
+      final imagePath = await _takePhotoAndSave();
+      final position = await _getCurrentLocation();
+      final address = await _getReadableAddress(
         position.latitude,
         position.longitude,
       );
@@ -164,145 +160,110 @@ class _HomeScreenState extends State<HomeScreen> {
       );
 
       setState(() {
-        parkingSpots = [newSpot, ...parkingSpots];
+        final updatedSpots = _parkingSpots
+            .map((spot) => spot.isActive ? spot.copyWith(isActive: false) : spot)
+            .toList();
+
+        _parkingSpots = [newSpot, ...updatedSpots];
+        _selectedTab = 0;
       });
 
-      await saveParkingSpots();
-      showInfoMessage('Parking saved successfully.');
-    } catch (error) {
-      if (!mounted) {
-        return;
-      }
+      await _saveParkingSpots();
 
-      showInfoMessage(error.toString());
+      await NotificationService.showParkingSavedNotification();
+
+      await AnalyticsService.logParkingCreated(
+        parkingId: newSpot.id,
+        address: newSpot.address,
+      );
+
+      _showInfoMessage('Parking saved successfully.');
+    } catch (error) {
+      _showInfoMessage(error.toString());
     }
   }
 
-  Future<void> endParking(ParkingSpot spot) async {
-    final spotIndex = parkingSpots.indexWhere((item) => item.id == spot.id);
+  Future<void> _endParking(ParkingSpot spot) async {
+    final spotIndex = _parkingSpots.indexWhere((item) => item.id == spot.id);
 
     if (spotIndex == -1) {
       return;
     }
 
     setState(() {
-      parkingSpots[spotIndex] = parkingSpots[spotIndex].copyWith(
+      _parkingSpots[spotIndex] = _parkingSpots[spotIndex].copyWith(
         isActive: false,
       );
     });
 
-    await saveParkingSpots();
-    showInfoMessage('Parking ended.');
+    await _saveParkingSpots();
+
+    await NotificationService.showParkingEndedNotification();
+
+    await AnalyticsService.logParkingEnded(parkingId: spot.id);
+    _showInfoMessage('Parking ended.');
+  }
+
+  Future<void> _openInGoogleMaps(ParkingSpot spot) async {
+    final googleMapsUri = Uri.parse(
+      'https://www.google.com/maps/search/?api=1&query=${spot.latitude},${spot.longitude}',
+    );
+
+    final launched = await launchUrl(
+      googleMapsUri,
+      mode: LaunchMode.externalApplication,
+    );
+
+    if (launched) {
+      await AnalyticsService.logMapsOpened(parkingId: spot.id);
+    } else if (mounted) {
+      _showInfoMessage('Could not open Google Maps.');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    Widget screenContent = const Center(child: CircularProgressIndicator());
+    String appBarTitle = 'Parker';
+
+    if (!_isLoading) {
+      screenContent = switch (_selectedTab) {
+        0 => ParkingsScreen(
+            latestSpot: _latestSpot,
+            onSetParking: _setParking,
+            onEndParking: _endParking,
+            onOpenMaps: _openInGoogleMaps,
+          ),
+        1 => HistoryScreen(
+            parkingSpots: _parkingSpots,
+            onEndParking: _endParking,
+            onOpenMaps: _openInGoogleMaps,
+          ),
+        _ => const Center(child: Text('Unknown tab!')),
+      };
+
+      appBarTitle = _selectedTab == 0 ? 'Parker' : 'Parking History';
+    }
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Parker'),
+        title: Text(appBarTitle),
         centerTitle: true,
-        actions: [
-          IconButton(
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => HistoryScreen(
-                    parkingSpots: parkingSpots,
-                    onEndParking: endParking,
-                    onOpenMaps: openInGoogleMaps,
-                  ),
-                ),
-              );
-            },
-            icon: const Icon(Icons.history),
+      ),
+      body: screenContent,
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedTab,
+        onTap: _selectTab,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.local_parking),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.history),
+            label: 'History',
           ),
         ],
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            const SizedBox(height: 24),
-            GestureDetector(
-              onTap: setParking,
-              child: Container(
-                width: double.infinity,
-                height: 300,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(28),
-                  gradient: LinearGradient(
-                    colors: [colorScheme.primary, colorScheme.primaryContainer],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.20),
-                      blurRadius: 16,
-                      offset: const Offset(0, 10),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: Image.asset(
-                          'assets/icons/logo_main.png',
-                          fit: BoxFit.contain,
-                        ),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 26),
-                      child: Text(
-                        'Set Parking',
-                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                              color: colorScheme.onPrimary,
-                              fontWeight: FontWeight.bold,
-                            ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            if (isLoading)
-              const CircularProgressIndicator()
-            else if (latestSpot == null)
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    children: [
-                      Icon(
-                        Icons.local_parking_outlined,
-                        size: 42,
-                        color: colorScheme.primary,
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        'No parking saved yet.',
-                        style: Theme.of(context).textTheme.titleMedium,
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                ),
-              )
-            else
-              ParkingCard(
-                spot: latestSpot!,
-                onToggleActive: () => endParking(latestSpot!),
-                onOpenMaps: () => openInGoogleMaps(latestSpot!),
-              ),
-          ],
-        ),
       ),
     );
   }
