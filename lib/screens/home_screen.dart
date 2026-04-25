@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
@@ -176,7 +177,7 @@ class _HomeScreenState extends State<HomeScreen> {
         parkingId: newSpot.id,
         address: newSpot.address,
       );
-
+      FirebaseAnalytics.instance.logEvent(name: 'set_parking');
       _showInfoMessage('Parking saved successfully.');
     } catch (error) {
       _showInfoMessage(error.toString());
@@ -199,7 +200,7 @@ class _HomeScreenState extends State<HomeScreen> {
     await _saveParkingSpots();
 
     await NotificationService.showParkingEndedNotification();
-
+    FirebaseAnalytics.instance.logEvent(name: 'end_parking',);
     await AnalyticsService.logParkingEnded(parkingId: spot.id);
     _showInfoMessage('Parking ended.');
   }
